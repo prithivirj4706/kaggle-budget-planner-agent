@@ -1,0 +1,298 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Budget Planner AI Bot</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+        
+        .container {
+            width: 100%;
+            max-width: 600px;
+            height: 90vh;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+        
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px;
+            text-align: center;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        
+        .header h1 {
+            font-size: 24px;
+            margin-bottom: 5px;
+        }
+        
+        .header p {
+            font-size: 12px;
+            opacity: 0.9;
+        }
+        
+        .chat-area {
+            flex: 1;
+            overflow-y: auto;
+            padding: 20px;
+            background: #f8f9fa;
+        }
+        
+        .message {
+            margin-bottom: 15px;
+            display: flex;
+            animation: fadeIn 0.3s ease-in;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        .user-message {
+            justify-content: flex-end;
+        }
+        
+        .user-text {
+            background: #667eea;
+            color: white;
+            padding: 12px 16px;
+            border-radius: 18px;
+            max-width: 70%;
+            word-wrap: break-word;
+            border-bottom-right-radius: 4px;
+        }
+        
+        .bot-text {
+            background: #e9ecef;
+            color: #333;
+            padding: 12px 16px;
+            border-radius: 18px;
+            max-width: 70%;
+            word-wrap: break-word;
+            border-bottom-left-radius: 4px;
+            line-height: 1.5;
+        }
+        
+        .timestamp {
+            font-size: 11px;
+            color: #999;
+            margin-top: 5px;
+        }
+        
+        .input-area {
+            padding: 15px;
+            background: white;
+            border-top: 1px solid #e0e0e0;
+            display: flex;
+            gap: 10px;
+        }
+        
+        #messageInput {
+            flex: 1;
+            padding: 12px 16px;
+            border: 1px solid #ddd;
+            border-radius: 24px;
+            font-size: 14px;
+            outline: none;
+            transition: all 0.3s;
+        }
+        
+        #messageInput:focus {
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+        
+        .send-btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            width: 45px;
+            height: 45px;
+            border-radius: 50%;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+            transition: all 0.3s;
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+        }
+        
+        .send-btn:hover {
+            transform: scale(1.05);
+            box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+        }
+        
+        .send-btn:active {
+            transform: scale(0.95);
+        }
+        
+        .loading {
+            display: flex;
+            gap: 4px;
+            align-items: center;
+        }
+        
+        .loading span {
+            width: 8px;
+            height: 8px;
+            background: #667eea;
+            border-radius: 50%;
+            animation: bounce 1.4s infinite;
+        }
+        
+        .loading span:nth-child(2) {
+            animation-delay: 0.2s;
+        }
+        
+        .loading span:nth-child(3) {
+            animation-delay: 0.4s;
+        }
+        
+        @keyframes bounce {
+            0%, 60%, 100% { opacity: 0.3; }
+            30% { opacity: 1; }
+        }
+        
+        .emoji {
+            font-size: 18px;
+            margin-right: 5px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🤖 Budget Planner Bot</h1>
+            <p>Your AI-powered financial assistant</p>
+        </div>
+        
+        <div class="chat-area" id="chatArea">
+            <div class="message">
+                <div>
+                    <div class="bot-text">
+                        <span class="emoji">👋</span> Hi! I'm your Budget Planner Bot. I can help you track expenses, check budget status, and get financial insights!
+                    </div>
+                    <div class="timestamp">Bot started</div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="input-area">
+            <input type="text" id="messageInput" placeholder="Try 'Add 500 for groceries' or 'Show budget status'..." />
+            <button class="send-btn" onclick="sendMessage()" title="Send">Send</button>
+        </div>
+    </div>
+    
+    <script>
+        const chatArea = document.getElementById('chatArea');
+        const messageInput = document.getElementById('messageInput');
+        
+        messageInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter' && messageInput.value.trim()) {
+                sendMessage();
+            }
+        });
+        
+        function sendMessage() {
+            const message = messageInput.value.trim();
+            if (!message) return;
+            
+            // Add user message
+            const userDiv = document.createElement('div');
+            userDiv.className = 'message user-message';
+            userDiv.innerHTML = `
+                <div>
+                    <div class="user-text">${escapeHtml(message)}</div>
+                    <div class="timestamp">${new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</div>
+                </div>
+            `;
+            chatArea.appendChild(userDiv);
+            messageInput.value = '';
+            
+            // Show loading
+            const loadingDiv = document.createElement('div');
+            loadingDiv.className = 'message';
+            loadingDiv.innerHTML = `
+                <div>
+                    <div class="bot-text">
+                        <div class="loading">
+                            <span></span>
+                            <span></span>
+                            <span></span>
+                        </div>
+                    </div>
+                </div>
+            `;
+            chatArea.appendChild(loadingDiv);
+            chatArea.scrollTop = chatArea.scrollHeight;
+            
+            // Send to backend
+            fetch('/api/chat', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({message: message})
+            })
+            .then(res => res.json())
+            .then(data => {
+                loadingDiv.remove();
+                const botDiv = document.createElement('div');
+                botDiv.className = 'message';
+                const responseText = data.response.replace(/\n/g, '<br>');
+                botDiv.innerHTML = `
+                    <div>
+                        <div class="bot-text">${responseText}</div>
+                        <div class="timestamp">${new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</div>
+                    </div>
+                `;
+                chatArea.appendChild(botDiv);
+                chatArea.scrollTop = chatArea.scrollHeight;
+            })
+            .catch(err => {
+                loadingDiv.remove();
+                const errDiv = document.createElement('div');
+                errDiv.className = 'message';
+                errDiv.innerHTML = `
+                    <div>
+                        <div class="bot-text">퉪️ Error: Could not connect to bot. Make sure the Flask server is running on http://localhost:5000</div>
+                    </div>
+                `;
+                chatArea.appendChild(errDiv);
+                chatArea.scrollTop = chatArea.scrollHeight;
+            });
+        }
+        
+        function escapeHtml(text) {
+            const map = {
+                '&': '&amp;',
+                '<': '&lt;',
+                '>': '&gt;',
+                '"': '&quot;',
+                "'": '&#039;'
+            };
+            return text.replace(/[&<>"']/g, m => map[m]);
+        }
+    </script>
+</body>
+</html>
